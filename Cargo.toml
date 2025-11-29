@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.100"
 ash = "0.38.0"
 ash-window = "0.13.0"
+glfw = "0.60.0"
+image = "0.25.9"
 raw-window-handle = "0.6.2"
-winit = "0.30.12"

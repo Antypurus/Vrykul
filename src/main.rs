@@ -1,64 +1,38 @@
-use std::sync::Arc;
-use winit::{
-    application::ApplicationHandler,
-    dpi::{LogicalSize, PhysicalSize},
-    event::WindowEvent,
-    event_loop::{ActiveEventLoop, EventLoop},
-    window::Window,
-};
+use ash::{Entry, Instance, vk};
+use glfw::*;
+use std::ffi::CString;
 
-#[derive(Default)]
-struct App {
-    window: Option<Arc<winit::window::Window>>,
-}
+fn create_vulkan_instance() -> ash::Instance {
+    let entry = unsafe { Entry::load().unwrap() };
 
-impl ApplicationHandler for App {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        if self.window.is_none() {
-            let attributes = Window::default_attributes()
-                .with_title("Test Window")
-                .with_inner_size(PhysicalSize::new(1920, 1080));
+    let application_name = CString::new("Vrykul Renderer").unwrap();
+    let engine_name = CString::new("Vrykul").unwrap();
+    let app_info = vk::ApplicationInfo::default()
+        .application_name(&application_name)
+        .engine_name(&engine_name)
+        .api_version(vk::make_api_version(0, 1, 3, 0));
 
-            let window = event_loop
-                .create_window(attributes)
-                .expect("failed to create window");
-            self.window = Some(Arc::new(window));
-            println!("Window created");
-        }
-    }
+    let mut enabled_layers: Vec<CString> = Vec::new();
+    #[cfg(debug_assertions)]
+    enabled_layers.push(CString::new("VK_LAYER_KHRONOS_validation").unwrap());
 
-    fn window_event(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-        window_id: winit::window::WindowId,
-        event: winit::event::WindowEvent,
-    ) {
-        let Some(window) = &self.window else {
-            return;
-        };
+    let instance_create_info = vk::InstanceCreateInfo::default().application_info(&app_info);
+    let instance = unsafe { entry.create_instance(&instance_create_info, None).unwrap() };
 
-        // used to ignore events unrelated to the window we just created
-        if window.id() != window_id {
-            return;
-        }
-
-        match event {
-            WindowEvent::CloseRequested => {
-                event_loop.exit();
-            }
-            WindowEvent::Resized(_new_size) => {
-                window.request_redraw();
-            }
-            _ => {}
-        }
-    }
+    return instance;
 }
 
 fn main() {
-    println!("Hello, world!");
+    let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
+    glfw.window_hint(WindowHint::ClientApi(glfw::ClientApiHint::NoApi));
 
-    let event_loop = EventLoop::new().unwrap();
-    let mut app = App::default();
+    create_vulkan_instance();
 
-    let _ = event_loop.run_app(&mut app);
+    let (window, _) = glfw
+        .create_window(1280, 720, "Vrykul Renderer", glfw::WindowMode::Windowed)
+        .expect("Failed to create window");
+
+    while !window.should_close() {
+        glfw.poll_events();
+    }
 }
